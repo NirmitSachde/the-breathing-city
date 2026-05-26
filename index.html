@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>The Breathing City. Cambridge Air Quality, Hour by Hour</title>
+  <meta name="description" content="A scroll-driven story of how Cambridge breathes across 24 hours, visualized from PurpleAir sensor data." />
+  <meta name="author" content="Nirmit Sachde" />
+
+  <meta property="og:title" content="The Breathing City" />
+  <meta property="og:description" content="An animated, scroll-driven narrative of urban air quality in Cambridge, MA." />
+  <meta property="og:type" content="website" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+  <!-- Loading curtain -->
+  <div class="loader" id="loader" aria-hidden="true">
+    <div class="loader-orb">
+      <svg viewBox="0 0 120 120">
+        <circle cx="60" cy="60" r="50" class="orb-ring orb-ring-1" />
+        <circle cx="60" cy="60" r="38" class="orb-ring orb-ring-2" />
+        <circle cx="60" cy="60" r="26" class="orb-ring orb-ring-3" />
+        <circle cx="60" cy="60" r="6" class="orb-core" />
+      </svg>
+    </div>
+    <div class="loader-label">Loading 24 hours of Cambridge</div>
+  </div>
+
+  <!-- Top progress bar -->
+  <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
+
+  <!-- Top nav strip -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <span class="brand-mark"></span>
+      <span class="brand-name">The Breathing City</span>
+    </div>
+    <div class="topbar-right">
+      <span class="meta-pill"><span class="dot dot-live"></span> Cambridge, MA</span>
+      <span class="meta-pill">PM<sub>2.5</sub> · 24h</span>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-bg" aria-hidden="true">
+      <svg class="hero-grid" viewBox="0 0 1200 800" preserveAspectRatio="none">
+        <defs>
+          <radialGradient id="heroGlow" cx="50%" cy="50%" r="60%">
+            <stop offset="0%" stop-color="#F2A93B" stop-opacity="0.18" />
+            <stop offset="60%" stop-color="#0D3B3E" stop-opacity="0" />
+          </radialGradient>
+          <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1A4D52" stroke-width="0.4" opacity="0.6" />
+          </pattern>
+        </defs>
+        <rect width="1200" height="800" fill="url(#grid)" />
+        <rect width="1200" height="800" fill="url(#heroGlow)" />
+      </svg>
+      <div class="hero-particles" id="heroParticles"></div>
+    </div>
+    <div class="hero-inner">
+      <div class="hero-tag">A scrollytelling investigation · 2026</div>
+      <h1 class="hero-title">
+        <span class="title-line">The city</span>
+        <span class="title-line title-accent">breathes</span>
+        <span class="title-line">in two rhythms.</span>
+      </h1>
+      <p class="hero-sub">
+        <span data-stat="data.sensors"></span> PurpleAir sensors. <span data-stat="data.neighborhoods"></span> neighborhoods. One day of Cambridge,
+        traced hour by hour through the particulate matter we cannot see.
+      </p>
+      <div class="hero-byline">
+        <span class="hero-byline-label">By</span>
+        <span class="hero-byline-name">Nirmit Sachde</span>
+        <span class="dotsep">·</span>
+        <span class="hero-byline-date">May 2026</span>
+      </div>
+    </div>
+    <div class="hero-scroll-hint">
+      <span class="scroll-hint-label">Scroll to begin</span>
+      <span class="scroll-hint-arrow"></span>
+    </div>
+  </section>
+
+  <!-- Prologue / context -->
+  <section class="prologue">
+    <div class="prologue-inner">
+      <div class="prologue-eyebrow">PROLOGUE</div>
+      <h2 class="prologue-title">
+        You cannot see what you breathe.<br />
+        <span class="muted">But the sensors can.</span>
+      </h2>
+      <div class="prologue-grid">
+        <div class="prologue-stat">
+          <div class="stat-value" data-counter-key="sensors" data-counter="0" data-suffix="">0</div>
+          <div class="stat-label">PurpleAir sensors</div>
+        </div>
+        <div class="prologue-stat">
+          <div class="stat-value" data-counter-key="neighborhoods" data-counter="0" data-suffix="">0</div>
+          <div class="stat-label">Neighborhoods</div>
+        </div>
+        <div class="prologue-stat">
+          <div class="stat-value" data-counter-key="readings" data-counter="0" data-suffix="">0</div>
+          <div class="stat-label">Hourly readings mapped</div>
+        </div>
+        <div class="prologue-stat">
+          <div class="stat-value" data-counter-key="days" data-counter="0" data-suffix="d">0</div>
+          <div class="stat-label">Days of historical data</div>
+        </div>
+      </div>
+      <p class="prologue-body">
+        Particulate matter smaller than 2.5 micrometers, <span class="mono">PM<sub>2.5</sub></span>, slips past the body's defenses and lodges
+        in the lungs and bloodstream. The World Health Organization recommends an annual average below
+        <span class="mono">5 µg/m³</span>. Cambridge sits at about
+        <span class="mono"><span data-stat="prologue.cityAvg"></span> µg/m³</span> across the <span data-stat="data.days"></span> days behind this map. Comfortable.
+        But comfortable averages hide the shape of the day. The real picture lives in the <em>hours</em>.
+      </p>
+    </div>
+  </section>
+
+  <!-- Scrollytelling section -->
+  <section class="scrolly" id="scrolly">
+
+    <!-- Sticky visualization panel -->
+    <div class="scrolly-figure" id="scrollyFigure">
+      <div class="figure-inner">
+
+        <!-- Clock / time of day -->
+        <div class="time-readout" id="timeReadout">
+          <svg class="time-arc" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="46" class="time-arc-track" />
+            <circle cx="50" cy="50" r="46" class="time-arc-fill" id="timeArcFill" />
+            <circle cx="50" cy="50" r="2.5" class="time-arc-dot" />
+          </svg>
+          <div class="time-text">
+            <div class="time-now" id="timeNow">05:00</div>
+            <div class="time-label" id="timeLabel">Pre-dawn</div>
+          </div>
+        </div>
+
+        <!-- Map -->
+        <div class="map-wrap">
+          <svg id="map" class="map-svg" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid meet"></svg>
+
+          <!-- Annotation overlay -->
+          <div class="map-annotations" id="mapAnnotations"></div>
+
+          <!-- Legend -->
+          <div class="legend" id="legend">
+            <div class="legend-title">PM<sub>2.5</sub> · µg/m³</div>
+            <div class="legend-bar" id="legendBar"></div>
+            <div class="legend-axis" id="legendAxis"></div>
+            <div class="legend-foot">
+              <span class="legend-flag legend-flag-who"></span>
+              <span class="legend-foot-label">WHO annual guideline · 5 µg/m³</span>
+            </div>
+          </div>
+
+          <!-- Side panel: rank list -->
+          <div class="rank-panel" id="rankPanel">
+            <div class="rank-title">
+              <span class="rank-title-label">Top 5</span>
+              <span class="rank-title-time" id="rankTitleTime">05:00</span>
+            </div>
+            <ul class="rank-list" id="rankList"></ul>
+          </div>
+
+          <!-- Hover tooltip -->
+          <div class="map-tooltip" id="mapTooltip" hidden></div>
+        </div>
+
+        <!-- Line chart for the ascent -->
+        <div class="chart-overlay" id="chartOverlay">
+          <svg id="lineChart" viewBox="0 0 800 220" preserveAspectRatio="none"></svg>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Narrative steps -->
+    <div class="scrolly-text">
+
+      <div class="step" data-step="0" data-hour="5" data-mode="map">
+        <div class="step-chapter">Chapter 01 · 05:00</div>
+        <h3 class="step-title">A quiet start.</h3>
+        <p class="step-body">
+          Before the first commuter, Cambridge sits at a citywide median of
+          <span class="num-inline" data-stat="ch1.median"></span> µg/m³, near the World Health
+          Organization's annual PM<sub>2.5</sub> guideline of 5. This is what good urban air looks like.
+          The map is almost monochrome.
+        </p>
+      </div>
+
+      <div class="step" data-step="1" data-hour="9" data-mode="map">
+        <div class="step-chapter">Chapter 02 · 09:00</div>
+        <h3 class="step-title">Morning lift.</h3>
+        <p class="step-body">
+          The curve tilts upward through the morning. The hottest neighborhood,
+          <span data-stat="ch2.peakName"></span>, sits at
+          <span class="num-inline" data-stat="ch2.peak"></span> µg/m³. Not a rush-hour spike, just a
+          gentle drift as the city wakes. The textbook two-peak diurnal pattern is barely there.
+        </p>
+      </div>
+
+      <div class="step" data-step="2" data-hour="12" data-mode="map">
+        <div class="step-chapter">Chapter 03 · 12:00</div>
+        <h3 class="step-title">Midday plateau.</h3>
+        <p class="step-body">
+          By noon the citywide average is
+          <span class="num-inline" data-stat="ch3.avg"></span> µg/m³. Neighborhoods cluster tightly
+          together. The spread between cleanest and most-loaded is barely
+          <span class="num-inline" data-stat="ch3.spread"></span> µg/m³, a remarkably even reading
+          across the thirteen districts.
+        </p>
+      </div>
+
+      <div class="step" data-step="3" data-hour="15" data-mode="map">
+        <div class="step-chapter">Chapter 04 · 15:00</div>
+        <h3 class="step-title">The afternoon drop.</h3>
+        <p class="step-body">
+          Something unexpected starts here. As the sun warms the surface and the Charles
+          river breeze picks up, air mixes vertically and particulates disperse upward.
+          The citywide average falls to
+          <span class="num-inline" data-stat="ch4.avg"></span> µg/m³, a
+          <span class="num-inline" data-stat="ch4.dropPct"></span>% drop from the morning crest.
+        </p>
+      </div>
+
+      <div class="step" data-step="4" data-hour="20" data-mode="map">
+        <div class="step-chapter">Chapter 05 · 20:00</div>
+        <h3 class="step-title">Evening, the surprise.</h3>
+        <p class="step-body">
+          Urban-air textbooks predict a second peak from the evening commute. Cambridge does the
+          opposite. The cleanest hour of the typical day is right now.
+          <span data-stat="ch5.lowName"></span> reads
+          <span class="num-inline" data-stat="ch5.low"></span> µg/m³, the day's minimum.
+          The river breeze keeps doing its work into the evening.
+        </p>
+      </div>
+
+      <div class="step" data-step="5" data-hour="23" data-mode="map">
+        <div class="step-chapter">Chapter 06 · 23:00</div>
+        <h3 class="step-title">Night creeps back.</h3>
+        <p class="step-body">
+          With the daytime mixing layer gone, concentrations begin a slow climb toward the
+          early-morning baseline. The citywide average is back up to
+          <span class="num-inline" data-stat="ch6.avg"></span> µg/m³ and rising. The cycle resets.
+        </p>
+      </div>
+
+      <div class="step" data-step="6" data-hour="0" data-mode="loop">
+        <div class="step-chapter">Chapter 07 · 24h loop</div>
+        <h3 class="step-title">The full day.</h3>
+        <p class="step-body">
+          The choropleth above is now looping the entire day in
+          <span class="num-inline" data-stat="ch7.dur"></span> seconds. Not the dramatic two-peak
+          shape the textbooks promise. A quieter, gentler curve that ventilates itself by evening.
+          The data has its own story to tell.
+        </p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-mark">
+        <span class="brand-mark"></span>
+        <span class="brand-name">The Breathing City</span>
+      </div>
+      <div class="footer-meta">
+        <span>Nirmit Sachde · 2026</span>
+        <span class="dotsep">·</span>
+        <a href="https://www2.purpleair.com" target="_blank" rel="noopener">PurpleAir</a>
+        <span class="dotsep">·</span>
+        <a href="https://github.com/cambridgegis/cambridgegis_data" target="_blank" rel="noopener">Cambridge GIS</a>
+        <span class="dotsep">·</span>
+        <a href="https://github.com/nirmitsachde" target="_blank" rel="noopener">Source</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://unpkg.com/scrollama@3.2.0/build/scrollama.min.js"></script>
+  <script src="js/main.js" type="module"></script>
+</body>
+</html>

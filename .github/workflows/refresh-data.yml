@@ -1,0 +1,95 @@
+name: Refresh PM2.5 data
+
+# Pulls a fresh window of PurpleAir history, rebuilds the typical-day profile,
+# and commits the resulting JSON back to main. GitHub Pages picks up the
+# change automatically and the page's data-stat bindings update every visible
+# number with no code edits.
+#
+# Required repo secret: PURPLEAIR_API_KEY  (READ key from develop.purpleair.com)
+# Add it at: Settings -> Secrets and variables -> Actions -> New repository secret
+
+on:
+  schedule:
+    # First day of each month at 06:00 UTC (02:00 EDT, 01:00 EST).
+    - cron: '0 6 1 * *'
+
+  workflow_dispatch:
+    inputs:
+      days:
+        description: 'History window in days (default 30, max 90 unless you have extra points)'
+        required: false
+        default: '30'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-data
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip requests
+
+      - name: Fetch PurpleAir data
+        env:
+          PURPLEAIR_API_KEY: ${{ secrets.PURPLEAIR_API_KEY }}
+        run: |
+          if [ -z "$PURPLEAIR_API_KEY" ]; then
+            echo "::error::PURPLEAIR_API_KEY secret is not set. Add it under Settings -> Secrets and variables -> Actions."
+            exit 1
+          fi
+          DAYS="${{ github.event.inputs.days || '30' }}"
+          echo "Fetching $DAYS days of history..."
+          python preprocessing/fetch_purpleair.py --days "$DAYS"
+
+      - name: Sanity-check the output
+        run: |
+          python - <<'PY'
+          import json, sys
+          d = json.load(open('data/air_quality_24h.json'))
+          m = d['meta']
+          print(f"sensors:        {m['sensors']}")
+          print(f"neighborhoods:  {m['neighborhoods']}")
+          print(f"days:           {m.get('days')}")
+          assert m['sensors'] > 0, 'no sensors returned'
+          assert m['neighborhoods'] == 13, 'expected 13 CDD polygons'
+          assert len(d['hourly']) == 24, 'expected 24 hours'
+          vals = [r['pm25'] for hr in d['hourly'] for r in hr]
+          lo, hi = min(vals), max(vals)
+          print(f"PM2.5 range:    {lo:.2f} - {hi:.2f} ug/m3")
+          assert 0 < lo < 500 and 0 < hi < 500, 'PM2.5 values out of plausible range'
+          PY
+
+      - name: Commit if data changed
+        run: |
+          if git diff --quiet -- data/air_quality_24h.json; then
+            echo "No data changes since last refresh. Nothing to commit."
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/air_quality_24h.json
+          git commit -m "Auto-refresh PM2.5 data ($(date -u +%Y-%m-%d), $(jq -r '.meta.days' data/air_quality_24h.json)-day window)"
+          git push
+
+      - name: Summary
+        if: always()
+        run: |
+          if [ -f data/air_quality_24h.json ]; then
+            echo "## Refresh summary" >> $GITHUB_STEP_SUMMARY
+            jq '.meta' data/air_quality_24h.json | tee -a $GITHUB_STEP_SUMMARY
+          fi

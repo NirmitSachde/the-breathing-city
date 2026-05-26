@@ -1,0 +1,25 @@
+.DS_Store
+*.log
+.env
+.env.*
+
+# Build / cache
+node_modules/
+dist/
+.cache/
+__pycache__/
+*.pyc
+
+# Editor / tooling
+.vscode/
+.idea/
+.claude/
+
+# Temporary
+*.swp
+*.tmp
+
+# Private planning docs
+*.docx
+*.pdf
+REPORT.md
